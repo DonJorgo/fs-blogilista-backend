@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "jest --verbose",
-    "dev": "nodemon index.js",
+    "start": "cross-env NODE_ENV=production node index.js",
+    "test": "cross-env NODE_ENV=test jest --verbose --runInBand",
+    "dev": "cross-env NODE_ENV=development nodemon index.js",
     "lint": "eslint ."
   },
   "author": "Jorma Nieminen",
@@ -19,6 +19,7 @@
     "mongoose": "^5.13.0"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "eslint": "^7.29.0",
     "jest": "^27.0.6",
     "nodemon": "^2.0.9"

@@ -33,6 +33,31 @@ describe('GET /api/blogs', () => {
   })
 })
 
+describe('POST /api/blogs', () => {
+  test('adds blog with correct fields', async () => {
+    const newBlog = {
+      title: 'new blog',
+      author: 'test blogger',
+      url: 'http://localhost/',
+      likes: 0
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    const blogsAtEnd = await helper.blogsInDb()
+
+    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
+    expect(blogsAtEnd).toContainEqual(
+      { ...newBlog,
+        id: expect.any(String)
+      })
+  })
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })

@@ -113,6 +113,30 @@ describe('POST /api/blogs', () => {
   })
 })
 
+describe('DELETE /api/blogs/:id',  () => {
+  test('succeeds with status code 204 with valid id', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .expect(204)
+
+    const blogsAtEnd = await helper.blogsInDb()
+
+    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length - 1)
+
+    expect(blogsAtEnd).not.toContainEqual(blogToDelete)
+  })
+
+  test('fails with status code 404 for non-existing id', async () => {
+    const nonExistingId = await helper.nonExistingId()
+    await api
+      .delete(`/api/blogs/${nonExistingId}`)
+      .expect(404)
+  })
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })

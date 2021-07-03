@@ -76,6 +76,41 @@ describe('POST /api/blogs', () => {
         id: expect.any(String)
       })
   })
+
+  test('returns 400 Bad request when both title and url are missing', async () => {
+    const newBlog = {
+      author: 'test blogger',
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(400)
+  })
+
+  test('returns 201 created when title is present and url is missing', async () => {
+    const newBlog = {
+      title: 'new blog',
+      author: 'test blogger',
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+  })
+
+  test('returns 201 created when title is missing and url is present', async () => {
+    const newBlog = {
+      author: 'test blogger',
+      url: 'http://localhost/'
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+  })
 })
 
 afterAll(() => {

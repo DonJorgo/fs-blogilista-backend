@@ -56,6 +56,26 @@ describe('POST /api/blogs', () => {
         id: expect.any(String)
       })
   })
+
+  test('sets likes to 0 by default', async () => {
+    const newBlog = {
+      title: 'new blog',
+      author: 'test blogger',
+      url: 'http://localhost/',
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    expect(blogsAtEnd).toContainEqual(
+      { ...newBlog,
+        likes: 0,
+        id: expect.any(String)
+      })
+  })
 })
 
 afterAll(() => {

@@ -62,6 +62,61 @@ describe('when there is initially one user at db', () => {
       const usernames = usersAtEnd.map(u => u.username)
       expect(usernames).toContain(newUser.username)
     })
+
+    test('does not create new user without username', async () => {
+      await postFails({
+        password: 'salasana',
+        name: 'Test User'
+      }, '`username` is required')
+    })
+
+    test('does not create new user with too short username', async () => {
+      await postFails({
+        username: 'te',
+        password: 'salasana',
+        name: 'Test User'
+      }, '`username` (`te`) is shorter than the minimum allowed length')
+    })
+
+    test('does not create new user with existing username', async () => {
+      await postFails({
+        username: 'root',
+        password: 'salasana',
+        name: 'Test User'
+      }, 'expected `username` to be unique')
+    })
+
+    test('does not create new user without password', async () => {
+      await postFails({
+        username: 'testeri',
+        name: 'Test User'
+      }, 'invalid password')
+    })
+
+    test('does not create new user with too short password', async () => {
+      await postFails({
+        username: 'testeri',
+        password: 'sa',
+        name: 'Test User'
+      }, 'invalid password')
+    })
+
+    const postFails = async (invalidUser, message) => {
+      const usersAtStart = await helper.usersInDb()
+
+      const result = await api
+        .post('/api/users')
+        .send(invalidUser)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(result.body.error).toContain(message)
+
+      const usersAtEnd = await helper.usersInDb()
+      expect(usersAtEnd).toHaveLength(usersAtStart.length)
+    }
+
+
   })
 })
 

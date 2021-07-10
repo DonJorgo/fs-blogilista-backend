@@ -4,11 +4,13 @@ const helper = require('./test_helper')
 const app = require('../app')
 const api = supertest(app)
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 
 beforeEach(async () => {
   await Blog.deleteMany({})
   await Blog.insertMany(helper.initialBlogs)
+  await User.deleteMany({})
 })
 
 describe('GET /api/blogs', () => {
@@ -31,85 +33,116 @@ describe('GET /api/blogs', () => {
       expect(blog._id).not.toBeDefined()
     })
   })
+
+  test('returns blogs with correct user', async () => {
+    const { user } = await helper.userAndBlog()
+
+    const response = await api.get('/api/blogs')
+    expect(response.body).toContainEqual(
+      expect.objectContaining({ user:
+        {
+          id: user._id.toString(),
+          name: user.name,
+          username: user.username
+        }
+      })
+    )
+  })
 })
 
 describe('POST /api/blogs', () => {
-  test('adds blog with correct fields', async () => {
-    const newBlog = {
-      title: 'new blog',
-      author: 'test blogger',
-      url: 'http://localhost/',
-      likes: 0
-    }
 
-    await api
-      .post('/api/blogs')
-      .send(newBlog)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
+  describe('when there is one user at db', () => {
 
-    const blogsAtEnd = await helper.blogsInDb()
+    beforeEach(async () => {
+      await User.deleteMany({})
+      const user = new User({ username: 'root' })
+      await user.save()
+    })
 
-    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
-    expect(blogsAtEnd).toContainEqual(
-      { ...newBlog,
-        id: expect.any(String)
-      })
-  })
+    test('adds blog with correct fields', async () => {
+      const newBlog = {
+        title: 'new blog',
+        author: 'test blogger',
+        url: 'http://localhost/',
+        likes: 0
+      }
 
-  test('sets likes to 0 by default', async () => {
-    const newBlog = {
-      title: 'new blog',
-      author: 'test blogger',
-      url: 'http://localhost/',
-    }
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
 
-    await api
-      .post('/api/blogs')
-      .send(newBlog)
-      .expect(201)
+      const blogsAtEnd = await helper.blogsInDb()
 
-    const blogsAtEnd = await helper.blogsInDb()
-    expect(blogsAtEnd).toContainEqual(
-      { ...newBlog,
-        likes: 0,
-        id: expect.any(String)
-      })
-  })
+      expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
+      expect(blogsAtEnd).toContainEqual(
+        { ...newBlog,
+          id: expect.any(String),
+          user: expect.any(Object)
+        })
+    })
 
-  test('returns 400 Bad request when both title and url are missing', async () => {
-    const newBlog = {
-      author: 'test blogger',
-    }
 
-    await api
-      .post('/api/blogs')
-      .send(newBlog)
-      .expect(400)
-  })
+    test('sets likes to 0 by default', async () => {
+      const newBlog = {
+        title: 'new blog',
+        author: 'test blogger',
+        url: 'http://localhost/',
+      }
 
-  test('returns 201 created when title is present and url is missing', async () => {
-    const newBlog = {
-      title: 'new blog',
-      author: 'test blogger',
-    }
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
 
-    await api
-      .post('/api/blogs')
-      .send(newBlog)
-      .expect(201)
-  })
+      const blogsAtEnd = await helper.blogsInDb()
+      expect(blogsAtEnd).toContainEqual(
+        { ...newBlog,
+          likes: 0,
+          id: expect.any(String),
+          user: expect.any(Object)
+        })
+    })
 
-  test('returns 201 created when title is missing and url is present', async () => {
-    const newBlog = {
-      author: 'test blogger',
-      url: 'http://localhost/'
-    }
 
-    await api
-      .post('/api/blogs')
-      .send(newBlog)
-      .expect(201)
+    test('returns 400 Bad request when both title and url are missing', async () => {
+      const newBlog = {
+        author: 'test blogger',
+      }
+
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(400)
+    })
+
+
+    test('returns 201 created when title is present and url is missing', async () => {
+      const newBlog = {
+        title: 'new blog',
+        author: 'test blogger',
+      }
+
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+    })
+
+
+    test('returns 201 created when title is missing and url is present', async () => {
+      const newBlog = {
+        author: 'test blogger',
+        url: 'http://localhost/'
+      }
+
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+    })
   })
 })
 
@@ -156,6 +189,8 @@ describe('PUT /api/blogs/:id', () => {
   })
 })
 
-afterAll(() => {
+afterAll( async () => {
+  await User.deleteMany({})
+  await Blog.deleteMany({})
   mongoose.connection.close()
 })

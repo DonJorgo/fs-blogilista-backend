@@ -72,10 +72,27 @@ const nonExistingId = async () => {
   return blog._id.toString()
 }
 
+const userAndBlog = async () => {
+  const user = await User.create({
+    username: 'user_with_blog',
+    name: 'User with Blog'
+  })
+  const blog = await Blog.create({
+    title: 'Blog with User',
+    author: 'Author with User',
+    user: user._id
+  })
+  user.blogs = [blog._id]
+  await user.save()
+
+  return { user: user, blog: blog }
+}
+
 
 module.exports = {
   initialBlogs,
   blogsInDb,
   nonExistingId,
   usersInDb,
+  userAndBlog
 }

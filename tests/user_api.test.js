@@ -5,41 +5,69 @@ const app = require('../app')
 const api = supertest(app)
 const bcrypt = require('bcrypt')
 const User = require('../models/user')
+const Blog = require('../models/blog')
 
 
-describe('when there is initially one user at db', () => {
 
-  beforeEach(async () => {
-    await User.deleteMany({})
 
-    const passwordHash = await bcrypt.hash('sekret', 10)
-    const user = new User({ username: 'root', passwordHash })
-    await user.save()
-  })
+describe('GET /api/users', () => {
 
-  describe('GET /api/users', () => {
+  describe('when there is one user at db', () => {
+
+    beforeEach(async () => {
+      await User.deleteMany({})
+      const passwordHash = await bcrypt.hash('sekret', 10)
+      const user = new User({ username: 'root', passwordHash })
+      await user.save()
+    })
+
     test('return json', async () => {
       await api
         .get('/api/users')
         .expect(200)
         .expect('Content-Type', /application\/json/)
-
     })
 
     test('return the correct user', async () => {
       const response = await api.get('/api/users')
-
       expect(response.body).toHaveLength(1)
       expect(response.body).toContainEqual({
         id: expect.any(String),
-        username: 'root'
+        username: 'root',
+        blogs: expect.any(Array)
       })
-
     })
   })
 
 
-  describe('POST /api/users', () => {
+  test('returns a blog of the user', async () => {
+    const { user, blog } = await helper.userAndBlog()
+    const response = await api.get('/api/users')
+    expect(response.body).toContainEqual(
+      expect.objectContaining({
+        username: user.username,
+        name: user.name,
+        id: user._id.toString(),
+        blogs: [expect.objectContaining({
+          title: blog.title,
+          id: blog._id.toString()
+        })]
+      })
+    )
+  })
+})
+
+
+describe('POST /api/users', () => {
+
+  describe('when there is one user at db', () => {
+
+    beforeEach(async () => {
+      await User.deleteMany({})
+      const passwordHash = await bcrypt.hash('sekret', 10)
+      const user = new User({ username: 'root', passwordHash })
+      await user.save()
+    })
 
     test('creates a new user with a fresh username', async () => {
       const usersAtStart = await helper.usersInDb()
@@ -115,12 +143,11 @@ describe('when there is initially one user at db', () => {
       const usersAtEnd = await helper.usersInDb()
       expect(usersAtEnd).toHaveLength(usersAtStart.length)
     }
-
-
   })
 })
 
 afterAll(async () => {
   await User.deleteMany({})
+  await Blog.deleteMany({})
   mongoose.connection.close()
 })

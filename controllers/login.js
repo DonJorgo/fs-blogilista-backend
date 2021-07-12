@@ -22,8 +22,11 @@ loginRouter.post('/', async (request, response) => {
     id: user._id
   }
 
-  // eslint-disable-next-line no-undef
-  const token = jwt.sign(userForToken, process.env.SECRET)
+  const token = jwt.sign(
+    userForToken,
+    // eslint-disable-next-line no-undef
+    process.env.SECRET,
+    { expiresIn: 60 * 60 })
 
   response
     .status(200)

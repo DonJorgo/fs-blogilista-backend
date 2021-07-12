@@ -37,6 +37,17 @@ blogRouter.post('/', async (request, response) => {
 
 
 blogRouter.delete('/:id', async (request, response) => {
+  // eslint-disable-next-line no-undef
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
+  if (!request.token || !decodedToken.id) {
+    return response.status(401).end()
+  }
+
+  const blog = await Blog.findById(request.params.id)
+  if (blog && blog.user && blog.user.toString() !== decodedToken.id.toString()) {
+    return response.status(401).end()
+  }
+
   const deletedBlog = await Blog.findByIdAndDelete(request.params.id)
   const status = deletedBlog ? 204 : 404
   response.status(status).end()

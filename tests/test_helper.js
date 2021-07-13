@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 
@@ -89,10 +90,27 @@ const userAndBlog = async () => {
 }
 
 
+const tokenForUser = user => {
+
+  const userForToken =  {
+    username: user.username,
+    id: user._id
+  }
+
+  const token = jwt.sign(
+    userForToken,
+    // eslint-disable-next-line no-undef
+    process.env.SECRET,
+    { expiresIn: 60 * 60 })
+
+  return token
+}
+
 module.exports = {
   initialBlogs,
   blogsInDb,
   nonExistingId,
   usersInDb,
-  userAndBlog
+  userAndBlog,
+  tokenForUser
 }

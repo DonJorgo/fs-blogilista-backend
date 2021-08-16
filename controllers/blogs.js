@@ -1,10 +1,12 @@
 const blogRouter = require('express').Router()
 const Blog = require('../models/blog')
+const Comment = require('../models/comment')
 
 blogRouter.get('/', async (request, response) => {
   const blogs = await Blog
     .find({})
     .populate('user', { username: 1, name: 1, id: 1 })
+    .populate('comments', { content: 1 , id: 1 })
   response.json(blogs)
 })
 
@@ -30,7 +32,7 @@ blogRouter.post('/', async (request, response) => {
   const populatedBlog = await Blog
     .findById(savedBlog._id)
     .populate('user', { username: 1, name: 1, id: 1 })
-
+    .populate('comments', { content: 1, id: 1 })
   response.status(201).json(populatedBlog)
 })
 
@@ -62,7 +64,23 @@ blogRouter.put('/:id', async (request, response) => {
   const updatedBlog = await Blog
     .findByIdAndUpdate(request.params.id, blog, { new:true })
     .populate('user', { username: 1, name: 1, id: 1 })
+    .populate('comments', { content: 1, id: 1 })
   response.json(updatedBlog.toJSON())
+})
+
+
+blogRouter.post('/:id/comments', async (request, response) => {
+  const comment = new Comment({ content: request.body.comment })
+
+  const savedComment = await comment.save(comment)
+
+  await Blog.findByIdAndUpdate(
+    request.params.id,
+    { $push: { comments: savedComment._id } },
+    { new: true }
+  )
+
+  response.status(201).json(savedComment)
 })
 
 module.exports = blogRouter
